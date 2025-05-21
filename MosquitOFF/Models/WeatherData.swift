@@ -7,10 +7,11 @@
 
 import Foundation
 
-struct WeatherData: Identifiable {
+struct WeatherData: Identifiable, Equatable {
     let id = UUID()
     let temperature: Double
     let humidity: Double
     let condition: String // "Sunny", "Cloudy", etc.
+
 }
 

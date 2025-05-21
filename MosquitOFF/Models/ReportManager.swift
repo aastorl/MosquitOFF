@@ -10,7 +10,6 @@ import Foundation
 class ReportManager {
     private let reportsKey = "storedReports"
 
-    // Guardar los reportes en UserDefaults
     func saveReports(_ reports: [Report]) {
         let encoder = JSONEncoder()
         if let encoded = try? encoder.encode(reports) {
@@ -18,7 +17,6 @@ class ReportManager {
         }
     }
 
-    // Recuperar los reportes desde UserDefaults
     func loadReports() -> [Report] {
         if let savedReports = UserDefaults.standard.data(forKey: reportsKey) {
             let decoder = JSONDecoder()
@@ -27,6 +25,12 @@ class ReportManager {
             }
         }
         return []
+    }
+
+    func deleteReport(id: UUID) {
+        var reports = loadReports()
+        reports.removeAll { $0.id == id }
+        saveReports(reports)
     }
 }
 

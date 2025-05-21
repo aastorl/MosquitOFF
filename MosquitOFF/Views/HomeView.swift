@@ -15,19 +15,14 @@ struct HomeView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Background image based on weather condition
                 if let weather = viewModel.weather {
                     backgroundImageForCondition(weather.condition)
                         .resizable()
                         .scaledToFill()
                         .ignoresSafeArea()
-                        .overlay(
-                            Color.black.opacity(0.2)
-                                .ignoresSafeArea()
-                        )
-                        .blur(radius: 6)
+                        .overlay(Color.black.opacity(0.2).ignoresSafeArea())
+                        .blur(radius: isNightTime() ? 3 : 6)
 
-                    // Mosquito animation overlay based on risk
                     mosquitoOverlay(for: mosquitoRisk(for: weather))
                 }
 
@@ -61,6 +56,23 @@ struct HomeView: View {
                             .font(.title2)
                             .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
 
+                        Button("🔔 Test Notification") {
+                            NotificationManager.shared.sendDengueRiskNotification()
+                        }
+                        .padding()
+                        .background(Color.yellow.opacity(0.8))
+                        .cornerRadius(10)
+                        .shadow(color: .black.opacity(0.6), radius: 3, x: 0, y: 2)
+                        
+                        Button("Test Daily Reminder") {
+                            NotificationManager.shared.sendTestDailyReminder()
+                        }
+                        .padding()
+                        .background(Color.blue.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+
+
                         Button(action: {
                             let newReport = Report(type: "Mosquito", description: "Mosquito avistado en la zona", timestamp: Date())
                             reports.append(newReport)
@@ -68,10 +80,21 @@ struct HomeView: View {
                         }) {
                             Text("Add Report")
                                 .padding()
-                                .background(Color.buttonBackground.opacity(0.9))
+                                .background(Color.blue.opacity(0.9))
                                 .foregroundColor(.white)
                                 .cornerRadius(8)
                                 .shadow(color: .black.opacity(0.6), radius: 3, x: 0, y: 2)
+                        }
+
+                        if mosquitoRisk(for: weather) == "High" {
+                            Button("Send Dengue Risk Notification") {
+                                NotificationManager.shared.sendDengueRiskNotification()
+                            }
+                            .padding()
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            .shadow(color: .black.opacity(0.6), radius: 3, x: 0, y: 2)
                         }
 
                         NavigationLink(destination: ReportListView()) {
@@ -90,6 +113,8 @@ struct HomeView: View {
                 .navigationTitle("")
                 .onAppear {
                     reports = reportManager.loadReports()
+                    NotificationManager.shared.requestPermission()
+                    NotificationManager.shared.scheduleDailyReminder()
                 }
             }
         }
@@ -98,14 +123,31 @@ struct HomeView: View {
     // MARK: - Helpers
 
     func mosquitoRisk(for data: WeatherData) -> String {
-        switch (data.temperature, data.humidity) {
-        case (25...40, 60...100): return "High"
-        case (20..<25, 40..<60): return "Medium"
-        default: return "Low"
+        let temp = data.temperature
+        let humidity = data.humidity
+        let condition = data.condition.lowercased()
+
+        let isRainy = condition.contains("rain") || condition.contains("storm") || condition.contains("drizzle")
+
+        if temp >= 25 && humidity >= 60 && isRainy {
+            return "High"
+        } else if temp >= 20 && humidity >= 40 {
+            return "Medium"
+        } else {
+            return "Low"
         }
+    }
+    
+    func isNightTime() -> Bool {
+        let hour = Calendar.current.component(.hour, from: Date())
+        return hour >= 19 || hour < 6
     }
 
     func backgroundImageForCondition(_ condition: String) -> Image {
+        if isNightTime() {
+            return Image("night_bg")
+        }
+
         switch condition.lowercased() {
         case "sunny": return Image("sunny_bg")
         case "cloudy": return Image("cloudy_bg")
@@ -113,6 +155,7 @@ struct HomeView: View {
         default: return Image("sunny_bg")
         }
     }
+
 
     func mosquitoOverlay(for risk: String) -> some View {
         let count: Int
@@ -134,18 +177,8 @@ struct HomeView: View {
             }
         }
     }
-
-    func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
 }
 
-#Preview {
-    HomeView()
-}
 
 
 

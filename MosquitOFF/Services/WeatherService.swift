@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 
 class WeatherService {
-    let apiKey = "ecd27ae9b48df86066912ed7e837fe85" // 🔒 Reemplazá con tu clave
+    let apiKey = "ecd27ae9b48df86066912ed7e837fe85"
 
     func fetchWeather(lat: Double, lon: Double, completion: @escaping (WeatherData?) -> Void) {
         let urlString =

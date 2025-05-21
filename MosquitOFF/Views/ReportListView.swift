@@ -8,21 +8,38 @@
 import SwiftUI
 
 struct ReportListView: View {
-    private let reportManager = ReportManager()  // Servicio para obtener los reportes
-    
+    @State private var reports: [Report] = []
+    private let reportManager = ReportManager()
+
     var body: some View {
-        List(reportManager.loadReports()) { report in
-            VStack(alignment: .leading) {
-                Text(report.type)
-                    .font(.headline)
-                Text(report.description)
-                    .font(.subheadline)
-                Text("Fecha: \(formatDate(report.timestamp))")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+        List {
+            ForEach(reports) { report in
+                VStack(alignment: .leading) {
+                    Text(report.type)
+                        .font(.headline)
+                    Text(report.description)
+                        .font(.subheadline)
+                    Text("Fecha: \(formatDate(report.timestamp))")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
             }
+            .onDelete(perform: delete)
         }
         .navigationTitle("Reportes Enviados")
+        .onAppear(perform: loadReports)
+    }
+
+    func loadReports() {
+        reports = reportManager.loadReports()
+    }
+
+    func delete(at offsets: IndexSet) {
+        for index in offsets {
+            let report = reports[index]
+            reportManager.deleteReport(id: report.id)
+        }
+        loadReports()
     }
 
     func formatDate(_ date: Date) -> String {
